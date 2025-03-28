@@ -19,29 +19,25 @@ class Comment_Analyzer ():
     ):
         # Asigno variables de instancia.
         self.path_to_comments = path_to_comments
-        self.raw_data_df = self.__validate_data(self.__load_data())
+        self.raw_data = self.__validate_data(self.__load_data())
 
         # Limpio la data cruda.
-        self.clean_data_df = self.__clean_data()
+        self.clean_data = self.__clean_data()
 
         # Cargo modelo y vectorizador para procesar la data y luego predecir.
         self.vectorizer_instance = self.__load_vectorizer(vectorizer_path)
         self.model_instance = self.__load_model(model_path)
         # Preprocesamos la data para luego predecir.
-        self.processed_data_df = self.__preprocess_data()
+        self.processed_data = self.__preprocess_data()
         # Predecimos la data procesada.
-        self.predictions = self.model_instance.predict(self.processed_data_df)
+        self.predictions = self.model_instance.predict(self.processed_data)
 
     def __load_data(self):
         # Este metodo cargaria los datos, en este caso es un csv, pero cualquier tipo de extraccion
         # desde una consulta a SQL a archivos alojados en alguna nube.
         return pd.read_csv(self.path_to_comments, low_memory=False)
 
-    def return_raw_data(self):
-        # Este metodo retornaria los datos crudos, en este caso un dataframe de pandas.
-        return self.raw_data_df
-
-    def __validate_data(self, raw_data):
+    def __validate_data(self, raw_data: pd.DataFrame):
         # Este metodo valida los datos, lo que se hara es filtrar nulos para el caso en el que el campo
         # 'content' sea nulo. y se imputara 'title' (si este llegara a ser nulo) con un string vacio.
 
@@ -76,7 +72,7 @@ class Comment_Analyzer ():
         # Funcion interna para realizar Stemming.
         # Aaplicara Stemming a los commentarios, para reducir las palabras que componen a los
         # comentarios a su raiz etimologica.
-        def stemming(text):
+        def stemming(text: str):
             stemmer = SnowballStemmer(language='spanish')
             # Stemming. Transformamos texto a lista ya que el stemmer trabaja sobre string crudos, no sobre
             # linguisticos como lemmatization.
@@ -85,7 +81,7 @@ class Comment_Analyzer ():
             return [stemmer.stem(token) for token in tokens]
 
         # Funcion interna para realizar limpieza de texto.
-        def clean_text(text):
+        def clean_text(text: str):
             # Transformo texto a minusculas.
             text = str(text).lower()
 
@@ -113,7 +109,7 @@ class Comment_Analyzer ():
             return text
 
         # Para no tocar la referencia original, se crea una copia del dataframe.
-        clean_data = self.raw_data_df.copy()
+        clean_data = self.raw_data.copy()
 
         # Una vez validados los dos campos, procedemos a crear el campo 'text_label' que contendra
         # el texto limpio y procesado.
@@ -123,10 +119,6 @@ class Comment_Analyzer ():
         # Aplicamos la limpieza de texto a cada comentario.
         clean_data['text_label'] = clean_data['text_label'].apply(clean_text)
         return clean_data
-
-    def return_clean_data(self):
-        # Este metodo retorna los datos procesados y limpios, listos para predecir.
-        return self.clean_data_df
 
     def __load_model(self, model_path: str):
         # Este metodo cargara el modelo de clasificacion entrenado previamente.
@@ -151,18 +143,14 @@ class Comment_Analyzer ():
 
     def __preprocess_data(self):
         # Este metodo preprocesara los datos, aplicando el vectorizador a los comentarios limpios.
-        processed_data_df = self.clean_data_df.copy()
+        processed_data = self.clean_data.copy()
 
         word_count = self.vectorizer_instance.transform(
-            processed_data_df['text_label']
+            processed_data['text_label']
         ).toarray()
 
         return pd.DataFrame(
             word_count, columns=self.vectorizer_instance.get_feature_names_out())
-
-    def return_processed_data(self):
-        # Este metodo retornara los datos procesados, listos para predecir.
-        return self.processed_data_df
 
     def return_word_cloud(self, on_data: Literal['raw', 'clean', 'predicted'] = 'predicted'):
         def plot_word_cloud(text, title, generate_form_frequecies=False):
@@ -180,18 +168,18 @@ class Comment_Analyzer ():
 
         if on_data == 'raw':
             text = ' '.join(
-                self.raw_data_df['content'].str.lower().astype(str)
+                self.raw_data['content'].str.lower().astype(str)
             )
             plot_word_cloud(text, 'Data Cruda')
 
         elif on_data == 'clean':
             text = ' '.join(
-                self.clean_data_df['text_label'].astype(str)
+                self.clean_data['text_label'].astype(str)
             )
             plot_word_cloud(text, 'Data Limpia')
 
         elif on_data == 'predicted':
-            predicted_data_df = self.processed_data_df.copy()
+            predicted_data_df = self.processed_data.copy()
             predicted_data_df['target'] = self.predictions
 
             target_list = predicted_data_df['target'].sort_values(
