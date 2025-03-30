@@ -26,6 +26,7 @@ class Comment_Analyzer ():
         path_to_comments: str,
         vectorizer_path: str,
         model_path: str,
+        output_path: str
     ):
         '''
             Inicializa la clase Comment_Analyzer.
@@ -53,6 +54,9 @@ class Comment_Analyzer ():
         self.processed_data = self.__preprocess_data()
         # Predecimos la data procesada.
         self.predictions = self.predict_comments()
+
+        # Guardamos resultados.
+        self.__save_predictions(output_path)
 
     def __load_data(self):
         '''
@@ -241,6 +245,21 @@ class Comment_Analyzer ():
                 np.ndarray: con las predicciones de los comentarios.
         '''
         return self.model_instance.predict(self.processed_data)
+
+    def __save_predictions(self, output_path):
+        '''
+            Guarda las predicciones sobre la data cruda en el path declarado.
+
+            Args:
+                output_path (str): Path de donde se espera el output.
+
+            Devuelve:
+                None: Se genera un .csv en el path declarado.
+        '''
+        # Creo copya de la instancia para no trabajar sobre la instancia.
+        output_df = self.raw_data.copy()
+        output_df['predictions'] = self.predictions
+        return output_df.to_csv(output_path, index=False)
 
     def return_word_cloud(self, on_data: Literal['raw', 'clean', 'predicted'] = 'predicted'):
         '''
