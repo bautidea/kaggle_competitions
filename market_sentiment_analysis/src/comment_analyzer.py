@@ -53,7 +53,7 @@ class Comment_Analyzer ():
         # Preprocesamos la data para luego predecir.
         self.processed_data = self.__preprocess_data()
         # Predecimos la data procesada.
-        self.predictions = self.predict_comments()
+        self.predictions = self.__predict_comments()
 
         # Guardamos resultados.
         self.__save_predictions(output_path)
@@ -231,7 +231,7 @@ class Comment_Analyzer ():
             word_count, columns=self.vectorizer_instance.get_feature_names_out()
         )
 
-    def predict_comments(self):
+    def __predict_comments(self):
         '''
             Predice si un comentario es:
                 - Negativo: 0
